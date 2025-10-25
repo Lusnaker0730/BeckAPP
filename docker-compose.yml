@@ -1,0 +1,110 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: fhir-postgres
+    environment:
+      POSTGRES_DB: fhir_analytics
+      POSTGRES_USER: fhir_user
+      POSTGRES_PASSWORD: fhir_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - fhir-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fhir_user -d fhir_analytics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fhir-backend
+    environment:
+      DATABASE_URL: postgresql://fhir_user:fhir_password@postgres:5432/fhir_analytics
+      JWT_SECRET: your-secret-key-change-in-production
+      FHIR_SERVER_URL: https://hapi.fhir.org/baseR4
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fhir-network
+    volumes:
+      - ./backend:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ETL Service
+  etl-service:
+    build:
+      context: ./etl-service
+      dockerfile: Dockerfile
+    container_name: fhir-etl
+    environment:
+      DATABASE_URL: postgresql://fhir_user:fhir_password@postgres:5432/fhir_analytics
+      FHIR_SERVER_URL: https://hapi.fhir.org/baseR4
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fhir-network
+    volumes:
+      - ./etl-service:/app
+      - fhir_bulk_data:/data
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+
+  # Analytics Service
+  analytics-service:
+    build:
+      context: ./analytics-service
+      dockerfile: Dockerfile
+    container_name: fhir-analytics
+    environment:
+      DATABASE_URL: postgresql://fhir_user:fhir_password@postgres:5432/fhir_analytics
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fhir-network
+    volumes:
+      - ./analytics-service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fhir-frontend
+    environment:
+      REACT_APP_API_URL: http://localhost:8000
+      REACT_APP_ANALYTICS_URL: http://localhost:8002
+      REACT_APP_FHIR_CLIENT_ID: your-client-id
+    ports:
+      - "3000:3000"
+    networks:
+      - fhir-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm start
+
+networks:
+  fhir-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  fhir_bulk_data:
+

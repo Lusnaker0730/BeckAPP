@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART Launch</title>
+    <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+</head>
+<body>
+    <div style="text-align: center; padding: 50px;">
+        <h2>Launching FHIR Application...</h2>
+        <p>Please wait while we connect to the EHR system.</p>
+    </div>
+    <script>
+        // SMART on FHIR Launch
+        FHIR.oauth2.authorize({
+            clientId: process.env.REACT_APP_FHIR_CLIENT_ID || "fhir-analytics-client",
+            scope: "patient/*.read launch/patient openid fhirUser",
+            redirectUri: "./index.html"
+        });
+    </script>
+</body>
+</html>
+
