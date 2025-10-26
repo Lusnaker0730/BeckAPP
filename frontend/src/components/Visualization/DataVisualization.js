@@ -40,11 +40,8 @@ const DataVisualization = () => {
 
   useEffect(() => {
     // Auto-adjust axes based on analysis mode for better defaults
-    if (analysisMode === 'diagnosis') {
-      if (xAxis === 'condition_code') {
-        setXAxis('gender'); // Gender is more meaningful when analyzing a specific diagnosis
-      }
-    } else if (analysisMode === 'demographic') {
+    // Note: Allow condition_code in diagnosis mode for comorbidity analysis
+    if (analysisMode === 'demographic') {
       if (xAxis !== 'condition_code' && xAxis !== 'date') {
         setXAxis('condition_code'); // Show diagnoses when analyzing demographics
       }
@@ -133,7 +130,11 @@ const DataVisualization = () => {
     // Build dynamic title based on analysis mode
     let chartTitle = '';
     if (analysisMode === 'diagnosis' && selectedDiagnosis) {
-      chartTitle = `${selectedDiagnosis} - ${axisOptions.find(a => a.value === xAxis)?.label}分佈`;
+      if (xAxis === 'condition_code') {
+        chartTitle = `${selectedDiagnosis} - 共病症分析`;
+      } else {
+        chartTitle = `${selectedDiagnosis} - ${axisOptions.find(a => a.value === xAxis)?.label}分佈`;
+      }
     } else if (analysisMode === 'demographic') {
       const demographicLabels = {
         'all': '全部人群',
@@ -182,7 +183,7 @@ const DataVisualization = () => {
         <h1>數據視覺化</h1>
         <p>
           {analysisMode === 'global' && '全局分析：查看所有數據的整體分佈'}
-          {analysisMode === 'diagnosis' && '診斷分析：查看特定診斷的患者人口統計分佈'}
+          {analysisMode === 'diagnosis' && '診斷分析：查看特定診斷的患者人口統計分佈或共病症分析'}
           {analysisMode === 'demographic' && '人群分析：查看特定人群的診斷分佈'}
         </p>
       </div>
@@ -243,7 +244,9 @@ const DataVisualization = () => {
               ))}
             </select>
             <p style={{ fontSize: '0.9em', color: '#666', marginTop: '5px' }}>
-              查看特定診斷的患者人口統計分佈（例如：高血壓患者的男女比例）
+              {xAxis === 'condition_code' 
+                ? '顯示該診斷患者群體中最常見的共病症（前10種）' 
+                : '查看特定診斷的患者人口統計分佈（例如：高血壓患者的男女比例）'}
             </p>
           </div>
         )}

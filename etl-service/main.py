@@ -19,13 +19,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configure CORS
+# Configure CORS - Security: Only allow whitelisted origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify allowed origins
+    allow_origins=settings.ALLOWED_ORIGINS,  # Restricted to specific origins
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Explicit methods
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin"],  # Explicit headers
+    max_age=600,  # Cache preflight requests for 10 minutes
 )
 
 # Include routers

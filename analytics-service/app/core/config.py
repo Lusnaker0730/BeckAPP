@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from typing import List
 import os
 
 class Settings(BaseSettings):
@@ -6,6 +7,15 @@ class Settings(BaseSettings):
         "DATABASE_URL",
         "postgresql://fhir_user:fhir_password@localhost:5432/fhir_analytics"
     )
+    
+    # CORS - Security: Only allow specific origins
+    ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",      # Frontend development
+        "http://localhost:3001",      # Frontend alternative port
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",      # Backend API
+        "http://127.0.0.1:8000",
+    ]
     
     class Config:
         case_sensitive = True
