@@ -5,7 +5,7 @@ import logging
 
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.api.routes import auth, analytics, export, admin
+from app.api.routes import auth, analytics, export, admin, cache
 
 # Configure logging
 logging.basicConfig(
@@ -84,48 +84,81 @@ async def lifespan(app: FastAPI):
     from app.core.security import get_password_hash
     from app.core.database import SessionLocal
     
+    # Import password validator
+    from app.core.password_validator import validate_password_or_raise, PasswordStrengthError
+    
     db = SessionLocal()
     try:
-        # Create/update admin user
-        admin_user = db.query(User).filter(User.username == "admin").first()
-        if not admin_user:
-            logger.info("Creating default admin user...")
-            admin_user = User(
-                username="admin",
-                email="admin@fhir-analytics.local",
-                hashed_password=get_password_hash("admin123"),
-                full_name="System Administrator",
-                role="admin",
-                is_active=True
-            )
-            db.add(admin_user)
-            logger.info("Default admin user created (username: admin, password: admin123)")
-        else:
-            # Reset admin password for existing user
-            logger.info("Resetting admin user password to default...")
-            admin_user.hashed_password = get_password_hash("admin123")
-            admin_user.is_active = True
-            logger.info("Admin password reset (username: admin, password: admin123)")
+        # Get credentials from environment variables
+        admin_username = settings.ADMIN_USERNAME
+        admin_password = settings.ADMIN_PASSWORD
+        admin_email = settings.ADMIN_EMAIL
         
-        # Create/update engineer user
-        engineer_user = db.query(User).filter(User.username == "engineer").first()
-        if not engineer_user:
-            logger.info("Creating default engineer user...")
-            engineer_user = User(
-                username="engineer",
-                email="engineer@fhir-analytics.local",
-                hashed_password=get_password_hash("engineer123"),
-                full_name="System Engineer",
-                role="engineer",
-                is_active=True
-            )
-            db.add(engineer_user)
-            logger.info("Default engineer user created (username: engineer, password: engineer123)")
+        engineer_username = settings.ENGINEER_USERNAME
+        engineer_password = settings.ENGINEER_PASSWORD
+        engineer_email = settings.ENGINEER_EMAIL
+        
+        # Create admin user (ONLY if not exists - NO password reset)
+        admin_user = db.query(User).filter(User.username == admin_username).first()
+        if not admin_user:
+            # Validate password strength
+            if not admin_password:
+                logger.error("❌ ADMIN_PASSWORD not set in environment variables!")
+                logger.error("   Please set ADMIN_PASSWORD in .env file")
+                logger.error("   Password must meet complexity requirements (12+ chars, uppercase, lowercase, digit, special char)")
+            else:
+                try:
+                    validate_password_or_raise(admin_password, min_length=12)
+                    logger.info("✅ Creating admin user...")
+                    admin_user = User(
+                        username=admin_username,
+                        email=admin_email,
+                        hashed_password=get_password_hash(admin_password),
+                        full_name="System Administrator",
+                        role="admin",
+                        is_active=True
+                    )
+                    db.add(admin_user)
+                    logger.info(f"✅ Admin user created: {admin_username}")
+                    logger.warning("⚠️  IMPORTANT: Change the admin password after first login!")
+                except PasswordStrengthError as e:
+                    logger.error(f"❌ Admin password does not meet security requirements:")
+                    logger.error(f"   {str(e)}")
+                    logger.error("   Please update ADMIN_PASSWORD in .env file")
         else:
-            logger.info("Resetting engineer user password to default...")
-            engineer_user.hashed_password = get_password_hash("engineer123")
-            engineer_user.is_active = True
-            logger.info("Engineer password reset (username: engineer, password: engineer123)")
+            logger.info(f"ℹ️  Admin user already exists: {admin_username}")
+            logger.info("   Password will NOT be automatically reset for security reasons")
+            logger.info("   To reset password, use the admin panel or database directly")
+        
+        # Create engineer user (ONLY if not exists - NO password reset)
+        engineer_user = db.query(User).filter(User.username == engineer_username).first()
+        if not engineer_user:
+            # Validate password strength
+            if not engineer_password:
+                logger.error("❌ ENGINEER_PASSWORD not set in environment variables!")
+                logger.error("   Please set ENGINEER_PASSWORD in .env file")
+            else:
+                try:
+                    validate_password_or_raise(engineer_password, min_length=12)
+                    logger.info("✅ Creating engineer user...")
+                    engineer_user = User(
+                        username=engineer_username,
+                        email=engineer_email,
+                        hashed_password=get_password_hash(engineer_password),
+                        full_name="System Engineer",
+                        role="engineer",
+                        is_active=True
+                    )
+                    db.add(engineer_user)
+                    logger.info(f"✅ Engineer user created: {engineer_username}")
+                    logger.warning("⚠️  IMPORTANT: Change the engineer password after first login!")
+                except PasswordStrengthError as e:
+                    logger.error(f"❌ Engineer password does not meet security requirements:")
+                    logger.error(f"   {str(e)}")
+                    logger.error("   Please update ENGINEER_PASSWORD in .env file")
+        else:
+            logger.info(f"ℹ️  Engineer user already exists: {engineer_username}")
+            logger.info("   Password will NOT be automatically reset for security reasons")
         
         db.commit()
         
@@ -160,11 +193,57 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add security headers middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add security headers to all responses"""
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        
+        # Prevent MIME type sniffing
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        
+        # Prevent clickjacking attacks
+        response.headers["X-Frame-Options"] = "DENY"
+        
+        # Enable XSS protection (legacy browsers)
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        
+        # Force HTTPS in production
+        if settings.ENVIRONMENT == "production":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+        
+        # Content Security Policy
+        csp_directives = [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",  # Adjust for production
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: https:",
+            "font-src 'self' data:",
+            "connect-src 'self' " + " ".join(settings.ALLOWED_ORIGINS),
+            "frame-ancestors 'none'",
+        ]
+        response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
+        
+        # Permissions Policy (formerly Feature Policy)
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        
+        # Referrer Policy
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
 app.include_router(export.router, prefix="/api/export", tags=["Export"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
+app.include_router(cache.router, prefix="/api/cache", tags=["Cache Management"])
 
 @app.get("/")
 async def root():

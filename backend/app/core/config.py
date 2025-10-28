@@ -7,13 +7,23 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "postgresql://fhir_user:fhir_password@localhost:5432/fhir_analytics"
+        "postgresql://fhir_user:changeme@localhost:5432/fhir_analytics"
     )
     
     # JWT - Security: Require strong JWT secret
     JWT_SECRET: str = os.getenv("JWT_SECRET", "")
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "30"))
+    
+    # Admin user credentials (for first-time setup only)
+    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
+    ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@fhir-analytics.local")
+    
+    # Engineer user credentials (for first-time setup only)
+    ENGINEER_USERNAME: str = os.getenv("ENGINEER_USERNAME", "engineer")
+    ENGINEER_PASSWORD: str = os.getenv("ENGINEER_PASSWORD", "")
+    ENGINEER_EMAIL: str = os.getenv("ENGINEER_EMAIL", "engineer@fhir-analytics.local")
     
     # FHIR Server
     FHIR_SERVER_URL: str = os.getenv("FHIR_SERVER_URL", "https://hapi.fhir.org/baseR4")
@@ -21,18 +31,22 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     
-    # CORS
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-    ]
+    # CORS - Parse from comma-separated string or use default list
+    ALLOWED_ORIGINS: List[str] = (
+        os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+        if os.getenv("ALLOWED_ORIGINS")
+        else ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000"]
+    )
     
     # Security
     BCRYPT_ROUNDS: int = 12
     
+    # Rate limiting
+    API_RATE_LIMIT: str = os.getenv("API_RATE_LIMIT", "100/minute")
+    
     # Environment
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
     class Config:
         case_sensitive = True

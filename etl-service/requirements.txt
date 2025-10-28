@@ -13,4 +13,7 @@ orjson==3.9.10
 celery==5.3.4
 redis==5.0.1
 requests==2.31.0
+# SMART Backend Services authentication
+PyJWT==2.8.0
+cryptography==41.0.7
 

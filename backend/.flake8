@@ -1,0 +1,47 @@
+[flake8]
+# Flake8 configuration for FHIR Analytics Platform Backend
+
+max-line-length = 100
+max-complexity = 10
+
+exclude =
+    .git,
+    __pycache__,
+    venv,
+    env,
+    .venv,
+    .env,
+    build,
+    dist,
+    *.egg-info,
+    .pytest_cache,
+    .coverage,
+    htmlcov,
+    migrations
+
+ignore =
+    # E203: whitespace before ':' (conflicts with black)
+    E203,
+    # W503: line break before binary operator (conflicts with black)
+    W503,
+    # E501: line too long (handled by black)
+    E501
+
+per-file-ignores =
+    # Imported but unused in __init__.py
+    __init__.py:F401
+    # Allow star imports in conftest
+    conftest.py:F401,F403
+
+# Select error codes to check
+select = E,W,F,C,N
+
+# Show source code for each error
+show-source = True
+
+# Show statistics
+statistics = True
+
+# Count errors
+count = True
+

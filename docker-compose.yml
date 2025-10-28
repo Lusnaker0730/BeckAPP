@@ -4,9 +4,9 @@ services:
     image: postgres:15-alpine
     container_name: fhir-postgres
     environment:
-      POSTGRES_DB: fhir_analytics
-      POSTGRES_USER: fhir_user
-      POSTGRES_PASSWORD: fhir_password
+      POSTGRES_DB: ${POSTGRES_DB:-fhir_analytics}
+      POSTGRES_USER: ${POSTGRES_USER:-fhir_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Please set POSTGRES_PASSWORD in .env file}
     ports:
       - "5432:5432"
     volumes:
@@ -15,10 +15,28 @@ services:
     networks:
       - fhir-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fhir_user -d fhir_analytics"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fhir_user} -d ${POSTGRES_DB:-fhir_analytics}"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: fhir-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - fhir-network
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:?Please set REDIS_PASSWORD in .env file}
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
 
   # Backend API
   backend:
@@ -26,14 +44,29 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: fhir-backend
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql://fhir_user:fhir_password@postgres:5432/fhir_analytics
-      JWT_SECRET: your-secret-key-change-in-production
-      FHIR_SERVER_URL: https://hapi.fhir.org/baseR4
+      DATABASE_URL: ${DATABASE_URL:?Please set DATABASE_URL in .env file}
+      JWT_SECRET: ${JWT_SECRET:?Please set JWT_SECRET in .env file}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-30}
+      FHIR_SERVER_URL: ${FHIR_SERVER_URL:-https://hapi.fhir.org/baseR4}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Please set ADMIN_PASSWORD in .env file}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@fhir-analytics.local}
+      ENGINEER_USERNAME: ${ENGINEER_USERNAME:-engineer}
+      ENGINEER_PASSWORD: ${ENGINEER_PASSWORD:?Please set ENGINEER_PASSWORD in .env file}
+      ENGINEER_EMAIL: ${ENGINEER_EMAIL:-engineer@fhir-analytics.local}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
       - "8000:8000"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - fhir-network
@@ -47,13 +80,22 @@ services:
       context: ./etl-service
       dockerfile: Dockerfile
     container_name: fhir-etl
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql://fhir_user:fhir_password@postgres:5432/fhir_analytics
-      FHIR_SERVER_URL: https://hapi.fhir.org/baseR4
+      DATABASE_URL: ${DATABASE_URL}
+      FHIR_SERVER_URL: ${FHIR_SERVER_URL:-https://hapi.fhir.org/baseR4}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      RETRY_MAX_ATTEMPTS: ${RETRY_MAX_ATTEMPTS:-5}
+      RETRY_BASE_DELAY: ${RETRY_BASE_DELAY:-1.0}
+      RETRY_MAX_DELAY: ${RETRY_MAX_DELAY:-60.0}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
       - "8001:8001"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - fhir-network
@@ -68,12 +110,18 @@ services:
       context: ./analytics-service
       dockerfile: Dockerfile
     container_name: fhir-analytics
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql://fhir_user:fhir_password@postgres:5432/fhir_analytics
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
       - "8002:8002"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - fhir-network
@@ -87,10 +135,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: fhir-frontend
+    env_file:
+      - .env
     environment:
-      REACT_APP_API_URL: http://localhost:8000
-      REACT_APP_ANALYTICS_URL: http://localhost:8002
-      REACT_APP_FHIR_CLIENT_ID: your-client-id
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8000}
+      REACT_APP_ANALYTICS_URL: ${REACT_APP_ANALYTICS_URL:-http://localhost:8002}
+      REACT_APP_FHIR_CLIENT_ID: ${REACT_APP_FHIR_CLIENT_ID}
+      REACT_APP_ENV: ${ENVIRONMENT:-development}
     ports:
       - "3000:3000"
     networks:
@@ -106,5 +157,6 @@ networks:
 
 volumes:
   postgres_data:
+  redis_data:
   fhir_bulk_data:
 

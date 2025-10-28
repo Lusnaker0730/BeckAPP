@@ -20,6 +20,20 @@ class Settings(BaseSettings):
         "http://127.0.0.1:8000",
     ]
     
+    # Retry and Timeout Configuration
+    RETRY_MAX_ATTEMPTS: int = int(os.getenv("RETRY_MAX_ATTEMPTS", "5"))
+    RETRY_BASE_DELAY: float = float(os.getenv("RETRY_BASE_DELAY", "1.0"))
+    RETRY_MAX_DELAY: float = float(os.getenv("RETRY_MAX_DELAY", "60.0"))
+    
+    # HTTP Timeouts (in seconds)
+    HTTP_TIMEOUT_CONNECT: float = float(os.getenv("HTTP_TIMEOUT_CONNECT", "10.0"))
+    HTTP_TIMEOUT_READ: float = float(os.getenv("HTTP_TIMEOUT_READ", "300.0"))
+    HTTP_TIMEOUT_WRITE: float = float(os.getenv("HTTP_TIMEOUT_WRITE", "300.0"))
+    HTTP_TIMEOUT_POOL: float = float(os.getenv("HTTP_TIMEOUT_POOL", "60.0"))
+    
+    # Progress Logging
+    PROGRESS_LOG_INTERVAL: int = int(os.getenv("PROGRESS_LOG_INTERVAL", "10"))
+    
     class Config:
         case_sensitive = True
         env_file = ".env"

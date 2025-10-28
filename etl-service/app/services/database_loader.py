@@ -39,16 +39,19 @@ class DatabaseLoader:
                     elif resource_type == "Observation":
                         self._load_observation(session, record, job_id)
                     
+                    # Commit each record individually to avoid transaction abortion
+                    session.commit()
                     loaded += 1
                 except Exception as e:
+                    # Rollback failed transaction and continue with next record
+                    session.rollback()
                     logger.error(f"Error loading record: {e}")
                     failed += 1
-            
-            session.commit()
+                    continue
         
         except Exception as e:
             session.rollback()
-            logger.error(f"Error committing transaction: {e}")
+            logger.error(f"Error in load_file: {e}")
             raise
         
         finally:

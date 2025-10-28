@@ -8,6 +8,7 @@ import logging
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.core.cache import cache_result  # Redis caching support
 from app.models.fhir_resources import Patient, Condition, Encounter, Observation
 from app.models.etl_job import ETLJob
 
@@ -36,12 +37,13 @@ async def get_etl_jobs_list(
     return job_list
 
 @router.get("/available-diagnoses")
+@cache_result(expire_seconds=600, key_prefix="available_diagnoses")  # Cache for 10 minutes
 async def get_available_diagnoses(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
     limit: int = Query(100, ge=1, le=500, description="Maximum number of diagnoses to return")
 ):
-    """Get list of unique diagnoses available in the database"""
+    """Get list of unique diagnoses available in the database (cached for 10 minutes)"""
     
     # Query unique condition codes and descriptions
     results = db.query(
@@ -310,13 +312,14 @@ async def get_trends(
     }
 
 @router.get("/top-conditions")
+@cache_result(expire_seconds=600, key_prefix="top_conditions")  # Cache for 10 minutes
 async def get_top_conditions(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
     limit: int = Query(5, ge=1, le=20),
     job_id: Optional[str] = Query(None, description="Filter by specific ETL job ID")
 ):
-    """Get top N conditions by frequency - REAL DATA from database with optional job filtering"""
+    """Get top N conditions by frequency (cached for 10 minutes)"""
     query = db.query(
         Condition.code_text,
         func.count(Condition.id).label('count')
@@ -354,6 +357,7 @@ async def get_top_conditions(
     }
 
 @router.get("/diagnosis")
+@cache_result(expire_seconds=1800, key_prefix="diagnosis_analysis")  # Cache for 30 minutes
 async def get_diagnosis_analysis(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -364,7 +368,7 @@ async def get_diagnosis_analysis(
     startYear: int = Query(None, ge=1900, le=2100, description="Start year for analysis"),
     endYear: int = Query(None, ge=1900, le=2100, description="End year for analysis")
 ):
-    """Get diagnosis analysis data - REAL DATA from database with flexible time range and job filtering"""
+    """Get diagnosis analysis data - REAL DATA from database (cached for 30 minutes)"""
     
     # Map diagnosis types to search terms (支持 ICD-10 和 SNOMED-CT)
     diagnosis_search_terms = {
@@ -561,6 +565,7 @@ async def get_diagnosis_analysis(
     }
 
 @router.get("/patient-demographics")
+@cache_result(expire_seconds=900, key_prefix="patient_demographics")  # Cache for 15 minutes
 async def get_patient_demographics(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)

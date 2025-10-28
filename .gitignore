@@ -24,11 +24,15 @@ wheels/
 .installed.cfg
 *.egg
 
-# Environment variables
+# Environment variables (CRITICAL - NEVER commit these!)
 .env
 .env.local
 .env.*.local
+.env.production
+.env.staging
+.env.development
 *.env
+!.env.example
 
 # IDE
 .vscode/
@@ -76,15 +80,61 @@ tmp/
 temp/
 *.tmp
 
-# Data files
+# Data files (may contain PHI/sensitive data)
 data/
+bulk_data/
+exports/
 *.csv
-*.json
+*.xlsx
+*.xls
+*_export_*.json
+export_*.json
+export_*.csv
 *.ndjson
 *.parquet
 
-# Certificates
+# Config files with potential secrets
+config.local.json
+config.production.json
+config.staging.json
+!config.json
+
+# Security & Certificates (CRITICAL - NEVER commit these!)
 *.pem
 *.key
 *.crt
+*.p12
+*.pfx
+*.cer
+jwks*.json
+secrets/
+.secrets/
+credentials/
+.credentials/
+
+# SSH Keys
+id_rsa
+id_rsa.pub
+id_dsa
+id_dsa.pub
+id_ecdsa
+id_ecdsa.pub
+id_ed25519
+id_ed25519.pub
+known_hosts
+
+# Cloud Provider Credentials
+.aws/
+.azure/
+.gcloud/
+gcp-credentials.json
+aws-credentials.json
+azure-credentials.json
+
+# Backup files that might contain sensitive data
+*.backup
+*.bak
+*.dump
+*.sql
+!docker/init-db.sql
 
