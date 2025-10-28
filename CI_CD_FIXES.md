@@ -24,6 +24,17 @@
 - 添加 `if: false` 暂时禁用此步骤
 - 需要配置 token 后再启用
 
+### 4. ✅ Security Scan - 权限和版本问题
+**问题：** 
+- "Resource not accessible by integration" 错误
+- CodeQL Action v2 已弃用，需要升级到 v3
+
+**修复：**
+- 添加 `permissions` 块授予 `security-events: write` 权限
+- 升级 `github/codeql-action/upload-sarif` 从 v2 到 v3
+- 添加 `continue-on-error` 到 Trivy 扫描步骤
+- 确保安全扫描结果能正确上传到 GitHub Security
+
 ## 如何配置可选功能
 
 ### SonarCloud（代码质量分析）
