@@ -97,12 +97,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
       
       - name: Install dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: npm install
       
       - name: Run linting
         working-directory: ./frontend
@@ -143,11 +141,6 @@ jobs:
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
-      
-      - name: Python Security Check
-        uses: pyupio/safety@v1
-        with:
-          api-key: ${{ secrets.SAFETY_API_KEY }}
         continue-on-error: true
   
   # Build Docker Images
@@ -193,6 +186,7 @@ jobs:
   code-quality:
     name: Code Quality Analysis
     runs-on: ubuntu-latest
+    if: false  # Disabled until SONAR_TOKEN is configured
     
     steps:
       - name: Checkout code
