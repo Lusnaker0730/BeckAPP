@@ -321,7 +321,7 @@ async def get_top_conditions(
     start_year: int = Query(None, ge=2000, le=2100, description="Start year for filtering"),
     end_year: int = Query(None, ge=2000, le=2100, description="End year for filtering")
 ):
-    """Get top N conditions by frequency with optional year range filtering (cached for 10 minutes)"""
+    """Get top N conditions by frequency with optional year range filtering and trend analysis (cached for 10 minutes)"""
     query = db.query(
         Condition.code_text,
         func.count(Condition.id).label('count')
@@ -356,15 +356,76 @@ async def get_top_conditions(
     if not results:
         return {
             "labels": [],
-            "values": []
+            "values": [],
+            "percentages": [],
+            "total": 0,
+            "trends": []
         }
     
     labels = [row.code_text for row in results]
     values = [row.count for row in results]
     
+    # Calculate percentages and total
+    total = sum(values)
+    percentages = [round((value / total * 100), 1) if total > 0 else 0 for value in values]
+    
+    # Calculate trends by comparing with previous year range (if year range is specified)
+    trends = []
+    if start_year and end_year:
+        year_span = end_year - start_year + 1
+        prev_start_year = start_year - year_span
+        prev_end_year = start_year - 1
+        
+        # Only calculate if previous period is valid
+        if prev_start_year >= 2000:
+            prev_start_date = datetime(prev_start_year, 1, 1)
+            prev_end_date = datetime(prev_end_year, 12, 31, 23, 59, 59)
+            
+            # Query previous period data for the same diagnoses
+            for label in labels:
+                prev_query = db.query(func.count(Condition.id)).filter(
+                    Condition.code_text == label,
+                    Condition.onset_datetime >= prev_start_date,
+                    Condition.onset_datetime <= prev_end_date
+                )
+                
+                if job_id and etl_job:
+                    prev_query = prev_query.filter(Condition.job_id == job_id)
+                
+                prev_count = prev_query.scalar() or 0
+                current_count = values[labels.index(label)]
+                
+                # Calculate trend
+                if prev_count > 0:
+                    change_percent = round(((current_count - prev_count) / prev_count) * 100, 1)
+                    if change_percent > 5:
+                        trend = "up"
+                    elif change_percent < -5:
+                        trend = "down"
+                    else:
+                        trend = "stable"
+                else:
+                    # New diagnosis in this period
+                    change_percent = 100.0 if current_count > 0 else 0.0
+                    trend = "new"
+                
+                trends.append({
+                    "direction": trend,
+                    "change": change_percent
+                })
+        else:
+            # No valid previous period
+            trends = [{"direction": "none", "change": 0.0} for _ in labels]
+    else:
+        # No year range specified, no trends
+        trends = [{"direction": "none", "change": 0.0} for _ in labels]
+    
     return {
         "labels": labels,
-        "values": values
+        "values": values,
+        "percentages": percentages,
+        "total": total,
+        "trends": trends
     }
 
 @router.get("/diagnosis")

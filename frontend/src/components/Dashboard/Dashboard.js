@@ -13,6 +13,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import './Dashboard.css';
 
 ChartJS.register(
@@ -24,7 +25,8 @@ ChartJS.register(
   ArcElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ChartDataLabels
 );
 
 const Dashboard = () => {
@@ -42,6 +44,89 @@ const Dashboard = () => {
   const [selectedJobId, setSelectedJobId] = useState('');
   const [trendStartYear, setTrendStartYear] = useState(2020);
   const [trendEndYear, setTrendEndYear] = useState(new Date().getFullYear());
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [compareStartYear, setCompareStartYear] = useState(2015);
+  const [compareEndYear, setCompareEndYear] = useState(2019);
+  const [compareTopConditions, setCompareTopConditions] = useState(null);
+
+  // Export functions
+  const exportToCSV = () => {
+    if (!topConditions || !topConditions.labels || topConditions.labels.length === 0) {
+      alert('沒有可導出的數據');
+      return;
+    }
+
+    const headers = ['排名', '診斷', '人次', '百分比', '趨勢', '變化率'];
+    const rows = topConditions.labels.map((label, index) => {
+      const trend = topConditions.trends && topConditions.trends[index];
+      let trendText = '無';
+      let changeText = '0%';
+      
+      if (trend && trend.direction !== 'none') {
+        if (trend.direction === 'up') trendText = '上升';
+        else if (trend.direction === 'down') trendText = '下降';
+        else if (trend.direction === 'stable') trendText = '穩定';
+        else if (trend.direction === 'new') trendText = '新增';
+        changeText = `${trend.change}%`;
+      }
+      
+      return [
+        index + 1,
+        `"${label}"`,  // Quote to handle commas in diagnosis names
+        topConditions.values[index],
+        `${topConditions.percentages[index]}%`,
+        trendText,
+        changeText
+      ].join(',');
+    });
+
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });  // Add BOM for Excel
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `前五大診斷_${trendStartYear}-${trendEndYear}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToJSON = () => {
+    if (!topConditions || !topConditions.labels || topConditions.labels.length === 0) {
+      alert('沒有可導出的數據');
+      return;
+    }
+
+    const exportData = {
+      metadata: {
+        exportDate: new Date().toISOString(),
+        yearRange: `${trendStartYear}-${trendEndYear}`,
+        etlJobId: selectedJobId || 'all',
+        total: topConditions.total
+      },
+      diagnoses: topConditions.labels.map((label, index) => ({
+        rank: index + 1,
+        diagnosis: label,
+        count: topConditions.values[index],
+        percentage: topConditions.percentages[index],
+        trend: topConditions.trends && topConditions.trends[index] ? topConditions.trends[index] : { direction: 'none', change: 0 }
+      }))
+    };
+
+    const json = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `前五大診斷_${trendStartYear}-${trendEndYear}_${new Date().toISOString().split('T')[0]}.json`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     fetchEtlJobs();
@@ -49,7 +134,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [selectedJobId, trendStartYear, trendEndYear]);
+  }, [selectedJobId, trendStartYear, trendEndYear, comparisonMode, compareStartYear, compareEndYear]);
 
   const fetchEtlJobs = async () => {
     try {
@@ -87,6 +172,19 @@ const Dashboard = () => {
       };
       const conditionsResponse = await axios.get('/api/analytics/top-conditions', { params: conditionsParams });
       setTopConditions(conditionsResponse.data);
+
+      // Fetch comparison data if comparison mode is enabled
+      if (comparisonMode) {
+        const compareParams = {
+          ...params,
+          start_year: compareStartYear,
+          end_year: compareEndYear
+        };
+        const compareResponse = await axios.get('/api/analytics/top-conditions', { params: compareParams });
+        setCompareTopConditions(compareResponse.data);
+      } else {
+        setCompareTopConditions(null);
+      }
 
       // Fetch recent activities
       const activitiesResponse = await axios.get('/api/analytics/recent-activities', { params: { limit: 10 } });
@@ -134,18 +232,83 @@ const Dashboard = () => {
           'rgba(239, 68, 68, 0.8)',
           'rgba(139, 92, 246, 0.8)',
         ],
+        // Store percentages for display
+        percentages: topConditions?.percentages || [],
       },
     ],
   };
 
-  const chartOptions = {
+  const compareBarChartData = {
+    labels: compareTopConditions?.labels || [],
+    datasets: [
+      {
+        label: '人次',
+        data: compareTopConditions?.values || [],
+        backgroundColor: [
+          'rgba(234, 88, 12, 0.8)',  // Orange theme for comparison
+          'rgba(168, 85, 247, 0.8)',
+          'rgba(236, 72, 153, 0.8)',
+          'rgba(14, 165, 233, 0.8)',
+          'rgba(34, 197, 94, 0.8)',
+        ],
+        percentages: compareTopConditions?.percentages || [],
+      },
+    ],
+  };
+
+  const lineChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
       },
+      datalabels: {
+        display: false  // Disable datalabels for line chart
+      }
     },
+  };
+
+  const barChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const label = context.dataset.label || '';
+            const value = context.parsed.y;
+            const percentage = context.dataset.percentages[context.dataIndex];
+            return `${label}: ${value.toLocaleString()} (${percentage}%)`;
+          }
+        }
+      },
+      datalabels: {
+        display: true,
+        color: '#fff',
+        font: {
+          weight: 'bold',
+          size: 12
+        },
+        formatter: function(value, context) {
+          const percentage = context.dataset.percentages[context.dataIndex];
+          return `${percentage}%`;
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: function(value) {
+            return value.toLocaleString();
+          }
+        }
+      }
+    }
   };
 
   return (
@@ -197,6 +360,56 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Comparison Mode Toggle */}
+      <div className="card" style={{ marginBottom: '20px', padding: '15px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: '500' }}>
+            <input 
+              type="checkbox"
+              checked={comparisonMode}
+              onChange={(e) => setComparisonMode(e.target.checked)}
+              style={{ marginRight: '8px', cursor: 'pointer', width: '18px', height: '18px' }}
+            />
+            啟用對比模式
+          </label>
+          
+          {comparisonMode && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }}>
+              <label style={{ fontSize: '14px', color: '#6b7280' }}>對比期間:</label>
+              <select 
+                value={compareStartYear}
+                onChange={(e) => setCompareStartYear(Number(e.target.value))}
+                style={{ 
+                  padding: '4px 8px', 
+                  borderRadius: '4px', 
+                  border: '1px solid #d1d5db',
+                  fontSize: '14px'
+                }}
+              >
+                {Array.from({ length: 26 }, (_, i) => 2000 + i).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+              <span style={{ color: '#6b7280' }}>至</span>
+              <select 
+                value={compareEndYear}
+                onChange={(e) => setCompareEndYear(Number(e.target.value))}
+                style={{ 
+                  padding: '4px 8px', 
+                  borderRadius: '4px', 
+                  border: '1px solid #d1d5db',
+                  fontSize: '14px'
+                }}
+              >
+                {Array.from({ length: 26 }, (_, i) => 2000 + i).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Charts */}
       <div className="grid grid-cols-2">
         <div className="chart-container">
@@ -236,21 +449,160 @@ const Dashboard = () => {
             </div>
           </div>
           <div style={{ height: '300px' }}>
-            <Line data={lineChartData} options={chartOptions} />
+            <Line data={lineChartData} options={lineChartOptions} />
           </div>
         </div>
 
-        <div className="chart-container">
-          <div className="chart-header">
-            <h3 className="chart-title">前五大診斷</h3>
-            <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '5px' }}>
-              {trendStartYear} - {trendEndYear}
-            </p>
+        {!comparisonMode ? (
+          // Single view mode
+          <div className="chart-container">
+            <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h3 className="chart-title">前五大診斷</h3>
+                <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '5px' }}>
+                  {trendStartYear} - {trendEndYear}
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  onClick={exportToCSV}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '13px',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#059669'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#10b981'}
+                  title="導出為 CSV 格式"
+                >
+                  📊 CSV
+                </button>
+                <button 
+                  onClick={exportToJSON}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '13px',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#2563eb'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = '#3b82f6'}
+                  title="導出為 JSON 格式"
+                >
+                  📄 JSON
+                </button>
+              </div>
+            </div>
+            <div style={{ height: '300px' }}>
+              <Bar data={barChartData} options={barChartOptions} />
+            </div>
+            
+            {/* Trend indicators */}
+            {topConditions && topConditions.trends && topConditions.trends.length > 0 && (
+              <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f9fafb', borderRadius: '6px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
+                  趨勢分析 (相比上一期間)
+                </div>
+                {topConditions.labels.map((label, index) => {
+                  const trend = topConditions.trends[index];
+                  if (!trend || trend.direction === 'none') return null;
+                  
+                  let arrow = '';
+                  let color = '';
+                  let text = '';
+                  
+                  if (trend.direction === 'up') {
+                    arrow = '↗️';
+                    color = '#dc2626';
+                    text = `上升 ${Math.abs(trend.change)}%`;
+                  } else if (trend.direction === 'down') {
+                    arrow = '↘️';
+                    color = '#16a34a';
+                    text = `下降 ${Math.abs(trend.change)}%`;
+                  } else if (trend.direction === 'stable') {
+                    arrow = '→';
+                    color = '#6b7280';
+                    text = '穩定';
+                  } else if (trend.direction === 'new') {
+                    arrow = '✨';
+                    color = '#2563eb';
+                    text = '新增';
+                  }
+                  
+                  return (
+                    <div key={index} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      padding: '4px 0',
+                      fontSize: '12px'
+                    }}>
+                      <span style={{ 
+                        minWidth: '25px',
+                        fontSize: '16px'
+                      }}>{arrow}</span>
+                      <span style={{ 
+                        flex: 1,
+                        color: '#4b5563',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>{label}</span>
+                      <span style={{ 
+                        color: color,
+                        fontWeight: '500',
+                        marginLeft: '10px'
+                      }}>{text}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-          <div style={{ height: '300px' }}>
-            <Bar data={barChartData} options={chartOptions} />
-          </div>
-        </div>
+        ) : (
+          // Comparison mode - two charts side by side
+          <>
+            <div className="chart-container">
+              <div className="chart-header">
+                <h3 className="chart-title">前五大診斷 - 期間 A</h3>
+                <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '5px' }}>
+                  {trendStartYear} - {trendEndYear}
+                </p>
+              </div>
+              <div style={{ height: '250px' }}>
+                <Bar data={barChartData} options={barChartOptions} />
+              </div>
+              <div style={{ marginTop: '10px', padding: '8px', backgroundColor: '#eff6ff', borderRadius: '6px', fontSize: '12px' }}>
+                <strong>總計：</strong>{topConditions?.total?.toLocaleString() || 0} 人次
+              </div>
+            </div>
+
+            <div className="chart-container">
+              <div className="chart-header">
+                <h3 className="chart-title">前五大診斷 - 期間 B</h3>
+                <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '5px' }}>
+                  {compareStartYear} - {compareEndYear}
+                </p>
+              </div>
+              <div style={{ height: '250px' }}>
+                <Bar data={compareBarChartData} options={barChartOptions} />
+              </div>
+              <div style={{ marginTop: '10px', padding: '8px', backgroundColor: '#fff7ed', borderRadius: '6px', fontSize: '12px' }}>
+                <strong>總計：</strong>{compareTopConditions?.total?.toLocaleString() || 0} 人次
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Recent Activity */}
