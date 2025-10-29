@@ -317,15 +317,26 @@ async def get_top_conditions(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
     limit: int = Query(5, ge=1, le=20),
-    job_id: Optional[str] = Query(None, description="Filter by specific ETL job ID")
+    job_id: Optional[str] = Query(None, description="Filter by specific ETL job ID"),
+    start_year: int = Query(None, ge=2000, le=2100, description="Start year for filtering"),
+    end_year: int = Query(None, ge=2000, le=2100, description="End year for filtering")
 ):
-    """Get top N conditions by frequency (cached for 10 minutes)"""
+    """Get top N conditions by frequency with optional year range filtering (cached for 10 minutes)"""
     query = db.query(
         Condition.code_text,
         func.count(Condition.id).label('count')
     ).filter(
         Condition.code_text.isnot(None)
     )
+    
+    # Apply year range filter if specified
+    if start_year and end_year:
+        start_date = datetime(start_year, 1, 1)
+        end_date = datetime(end_year, 12, 31, 23, 59, 59)
+        query = query.filter(
+            Condition.onset_datetime >= start_date,
+            Condition.onset_datetime <= end_date
+        )
     
     # Apply job filter if specified
     if job_id:

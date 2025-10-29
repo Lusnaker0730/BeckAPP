@@ -79,8 +79,13 @@ const Dashboard = () => {
       const trendResponse = await axios.get('/api/analytics/trends', { params: trendParams });
       setTrendData(trendResponse.data);
 
-      // Fetch top conditions
-      const conditionsResponse = await axios.get('/api/analytics/top-conditions', { params });
+      // Fetch top conditions with same year range
+      const conditionsParams = {
+        ...params,
+        start_year: trendStartYear,
+        end_year: trendEndYear
+      };
+      const conditionsResponse = await axios.get('/api/analytics/top-conditions', { params: conditionsParams });
       setTopConditions(conditionsResponse.data);
 
       // Fetch recent activities
@@ -238,6 +243,9 @@ const Dashboard = () => {
         <div className="chart-container">
           <div className="chart-header">
             <h3 className="chart-title">前五大診斷</h3>
+            <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '5px' }}>
+              {trendStartYear} - {trendEndYear}
+            </p>
           </div>
           <div style={{ height: '300px' }}>
             <Bar data={barChartData} options={chartOptions} />
