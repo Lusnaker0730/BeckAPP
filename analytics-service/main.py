@@ -22,7 +22,7 @@ app = FastAPI(
 # Configure CORS - Security: Only allow whitelisted origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,  # Restricted to specific origins
+    allow_origins=settings.ALLOWED_ORIGINS.split(","),  # Parse comma-separated origins
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Explicit methods
     allow_headers=["Authorization", "Content-Type", "Accept", "Origin"],  # Explicit headers

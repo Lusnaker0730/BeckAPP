@@ -80,10 +80,27 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=Token)
 async def login(login_data: UserLogin, db: Session = Depends(get_db)):
     """Login user"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     # Find user
+    logger.info(f"Login attempt for username: {login_data.username}")
     user = db.query(User).filter(User.username == login_data.username).first()
     
-    if not user or not verify_password(login_data.password, user.hashed_password):
+    if not user:
+        logger.warning(f"User not found: {login_data.username}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    logger.info(f"User found: {user.username}, checking password...")
+    password_valid = verify_password(login_data.password, user.hashed_password)
+    logger.info(f"Password verification result: {password_valid}")
+    
+    if not password_valid:
+        logger.warning(f"Invalid password for user: {login_data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",

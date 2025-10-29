@@ -5,17 +5,11 @@ import os
 class Settings(BaseSettings):
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "postgresql://fhir_user:fhir_password@localhost:5432/fhir_analytics"
+        "postgresql://fhir_admin:SecurePass123@postgres:5432/fhir_analytics"
     )
     
-    # CORS - Security: Only allow specific origins
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3000",      # Frontend development
-        "http://localhost:3001",      # Frontend alternative port
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",      # Backend API
-        "http://127.0.0.1:8000",
-    ]
+    # CORS - Parse from comma-separated string
+    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000")
     
     class Config:
         case_sensitive = True
