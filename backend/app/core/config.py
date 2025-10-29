@@ -32,11 +32,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     
     # CORS - Parse from comma-separated string or use default list
-    ALLOWED_ORIGINS: List[str] = (
-        os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
-        if os.getenv("ALLOWED_ORIGINS")
-        else ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000"]
-    )
+    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000")
     
     # Security
     BCRYPT_ROUNDS: int = 12
