@@ -10,6 +10,8 @@ import DiagnosisAnalysis from './components/Analysis/DiagnosisAnalysis';
 import DataVisualization from './components/Visualization/DataVisualization';
 import DataExport from './components/Export/DataExport';
 import AdminPanel from './components/Admin/AdminPanel';
+import CohortAnalysis from './components/Cohort/CohortAnalysis';
+import DataQuality from './components/Quality/DataQuality';
 import Navbar from './components/Layout/Navbar';
 import PrivateRoute from './components/Auth/PrivateRoute';
 
@@ -108,6 +110,22 @@ function App() {
               element={
                 <PrivateRoute isAuthenticated={isAuthenticated}>
                   <AdminPanel />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/cohort" 
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <CohortAnalysis />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/data-quality" 
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <DataQuality />
                 </PrivateRoute>
               } 
             />

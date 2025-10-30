@@ -13,6 +13,8 @@ const Navbar = ({ user, onLogout }) => {
   const navItems = [
     { path: '/dashboard', label: '儀錶板', icon: '📊' },
     { path: '/diagnosis-analysis', label: '診斷分析', icon: '🏥' },
+    { path: '/cohort', label: '群組分析', icon: '👥' },
+    { path: '/data-quality', label: '數據質量', icon: '✅' },
     { path: '/visualization', label: '數據視覺化', icon: '📈' },
     { path: '/export', label: '資料匯出', icon: '💾' },
   ];

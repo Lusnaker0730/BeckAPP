@@ -5,7 +5,7 @@ import logging
 
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.api.routes import auth, analytics, export, admin, cache
+from app.api.routes import auth, analytics, export, admin, cache, cohort, report, data_quality
 
 # Configure logging
 logging.basicConfig(
@@ -244,6 +244,9 @@ app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"]
 app.include_router(export.router, prefix="/api/export", tags=["Export"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(cache.router, prefix="/api/cache", tags=["Cache Management"])
+app.include_router(cohort.router, prefix="/api/cohort", tags=["Cohort Analysis"])
+app.include_router(report.router, prefix="/api/reports", tags=["Automated Reports"])
+app.include_router(data_quality.router, prefix="/api/data-quality", tags=["Data Quality"])
 
 @app.get("/")
 async def root():
