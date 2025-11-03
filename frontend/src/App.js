@@ -12,6 +12,7 @@ import DataExport from './components/Export/DataExport';
 import AdminPanel from './components/Admin/AdminPanel';
 import CohortAnalysis from './components/Cohort/CohortAnalysis';
 import DataQuality from './components/Quality/DataQuality';
+import SurvivalAnalysis from './components/Survival/SurvivalAnalysis';
 import Navbar from './components/Layout/Navbar';
 import PrivateRoute from './components/Auth/PrivateRoute';
 
@@ -126,6 +127,14 @@ function App() {
               element={
                 <PrivateRoute isAuthenticated={isAuthenticated}>
                   <DataQuality />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/survival-analysis" 
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <SurvivalAnalysis />
                 </PrivateRoute>
               } 
             />

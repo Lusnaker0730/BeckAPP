@@ -92,6 +92,17 @@ docker-compose ps
 4. 生成自訂圖表
 5. 下載圖表圖片
 
+### 存活分析 🔬 **（新功能）**
+
+1. 點擊 **存活分析**
+2. 選擇分析類型：
+   - **Kaplan-Meier 存活曲線**：計算生存機率隨時間變化
+   - **Cox 比例風險模型**：評估風險因素影響
+   - **統計摘要**：查看基本統計資訊
+3. 設定參數（診斷條件、時間範圍等）
+4. 點擊 **開始分析**
+5. 查看生存曲線、風險比、統計檢定結果
+
 ### 資料匯出
 
 1. 點擊 **資料匯出**
@@ -123,6 +134,34 @@ docker-compose ps
    - 新增/編輯代碼集
 
 ## 🔧 常見操作
+
+### 資料庫索引優化 ⚡ 
+
+**推薦：提升查詢性能 10-20 倍！**
+
+第一次使用或數據量較大時，建議執行索引優化：
+
+```bash
+# Windows PowerShell
+.\docker\run-optimization.ps1
+
+# Linux / Mac
+chmod +x ./docker/run-optimization.sh
+./docker/run-optimization.sh
+
+# 或手動執行
+docker-compose exec -T postgres psql -U fhir_user -d fhir_analytics < ./docker/optimize-indexes.sql
+```
+
+**優化內容**：
+- ✅ JSON → JSONB 轉換（更快的查詢）
+- ✅ 添加 20+ 個性能索引
+- ✅ 支援 JSONB 快速搜索
+- ✅ 文本模糊搜索優化
+
+**詳細文檔**：查看 [DATABASE_INDEX_OPTIMIZATION.md](DATABASE_INDEX_OPTIMIZATION.md)
+
+---
 
 ### 匯入範例資料
 
@@ -264,6 +303,8 @@ docker-compose logs postgres
 
 ## 📚 下一步
 
+- ⚡ [數據庫索引優化](DATABASE_INDEX_OPTIMIZATION.md) - **推薦首先執行**
+- 🔬 [存活分析功能](SURVIVAL_ANALYSIS_FEATURE.md) - **新功能文檔**
 - 閱讀 [完整文檔](README.md)
 - 查看 [API 文檔](API_DOCUMENTATION.md)
 - 了解 [部署指南](DEPLOYMENT.md)
