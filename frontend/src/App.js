@@ -13,6 +13,7 @@ import AdminPanel from './components/Admin/AdminPanel';
 import CohortAnalysis from './components/Cohort/CohortAnalysis';
 import DataQuality from './components/Quality/DataQuality';
 import SurvivalAnalysis from './components/Survival/SurvivalAnalysis';
+import AuditLogs from './components/AuditLogs/AuditLogs';
 import Navbar from './components/Layout/Navbar';
 import PrivateRoute from './components/Auth/PrivateRoute';
 
@@ -135,6 +136,14 @@ function App() {
               element={
                 <PrivateRoute isAuthenticated={isAuthenticated}>
                   <SurvivalAnalysis />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/audit-logs" 
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <AuditLogs />
                 </PrivateRoute>
               } 
             />

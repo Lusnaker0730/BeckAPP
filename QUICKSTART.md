@@ -103,6 +103,42 @@ docker-compose ps
 4. 點擊 **開始分析**
 5. 查看生存曲線、風險比、統計檢定結果
 
+### 審計日誌 🔐 **（新功能）**
+
+**僅管理員可用** - 記錄所有系統操作，滿足醫療數據合規性要求（HIPAA、GDPR）。
+
+1. 以 **admin** 身份登入
+2. 點擊 **審計日誌**
+3. 查看系統操作記錄：
+   - 用戶登入/登出
+   - 數據查詢和匯出
+   - 管理員操作
+   - 系統事件
+4. 使用過濾器查找特定操作：
+   - 按用戶名、操作類型、資源類型過濾
+   - 按日期範圍過濾
+   - 全文搜索
+5. 點擊 **查看詳情** 查看完整操作信息
+6. 查看統計儀表板（總操作數、成功率、活躍用戶等）
+
+**功能特點：**
+- ✅ 自動記錄所有 API 請求
+- ✅ 敏感數據自動脫敏（密碼、令牌等）
+- ✅ 記錄用戶、IP 地址、操作時間、處理時長
+- ✅ 強大的搜索和過濾功能
+- ✅ 實時統計和趨勢分析
+
+**安裝：**
+```bash
+# Windows
+.\setup-audit-logs.ps1
+
+# Linux/Mac
+./setup-audit-logs.sh
+```
+
+詳細文檔：[AUDIT_LOG_SYSTEM.md](AUDIT_LOG_SYSTEM.md)
+
 ### 資料匯出
 
 1. 點擊 **資料匯出**
@@ -305,6 +341,7 @@ docker-compose logs postgres
 
 - ⚡ [數據庫索引優化](DATABASE_INDEX_OPTIMIZATION.md) - **推薦首先執行**
 - 🔬 [存活分析功能](SURVIVAL_ANALYSIS_FEATURE.md) - **新功能文檔**
+- 🔐 [審計日誌系統](AUDIT_LOG_SYSTEM.md) - **新功能文檔（合規性必備）**
 - 閱讀 [完整文檔](README.md)
 - 查看 [API 文檔](API_DOCUMENTATION.md)
 - 了解 [部署指南](DEPLOYMENT.md)

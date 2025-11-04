@@ -23,6 +23,11 @@ const Navbar = ({ user, onLogout }) => {
   if (user?.role === 'admin' || user?.role === 'engineer') {
     navItems.push({ path: '/admin', label: '後端管理', icon: '⚙️' });
   }
+  
+  // 審計日誌僅對管理員可見
+  if (user?.role === 'admin') {
+    navItems.push({ path: '/audit-logs', label: '審計日誌', icon: '🔐' });
+  }
 
   return (
     <nav className="navbar">

@@ -93,11 +93,15 @@ export_*.csv
 *.ndjson
 *.parquet
 
-# Config files with potential secrets
+# Config files with potential secrets (CRITICAL - contains private keys!)
+config.json
+config_full.json
+config_m50.json
 config.local.json
 config.production.json
 config.staging.json
-!config.json
+Keys.json
+!config.example.json
 
 # Security & Certificates (CRITICAL - NEVER commit these!)
 *.pem

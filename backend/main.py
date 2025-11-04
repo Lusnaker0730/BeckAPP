@@ -5,7 +5,8 @@ import logging
 
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.api.routes import auth, analytics, export, admin, cache, cohort, report, data_quality, survival
+from app.api.routes import auth, analytics, export, admin, cache, cohort, report, data_quality, survival, audit
+from app.middleware.audit_middleware import AuditMiddleware
 
 # Configure logging
 logging.basicConfig(
@@ -193,6 +194,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add Audit Middleware (审计日志中间件)
+app.add_middleware(AuditMiddleware)
+
 # Add security headers middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -248,6 +252,7 @@ app.include_router(cohort.router, prefix="/api/cohort", tags=["Cohort Analysis"]
 app.include_router(report.router, prefix="/api/reports", tags=["Automated Reports"])
 app.include_router(data_quality.router, prefix="/api/data-quality", tags=["Data Quality"])
 app.include_router(survival.router, prefix="/api/survival", tags=["Survival Analysis"])
+app.include_router(audit.router, prefix="/api/audit", tags=["Audit Logs"])
 
 @app.get("/")
 async def root():

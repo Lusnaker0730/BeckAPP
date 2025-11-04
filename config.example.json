@@ -1,0 +1,38 @@
+{
+  "jwks": {
+    "keys": [
+      {
+        "kty": "RSA",
+        "alg": "RS384",
+        "n": "YOUR_PUBLIC_KEY_MODULUS",
+        "e": "AQAB",
+        "key_ops": [
+          "verify"
+        ],
+        "ext": true,
+        "kid": "YOUR_KEY_ID"
+      },
+      {
+        "kty": "RSA",
+        "alg": "RS384",
+        "n": "YOUR_PUBLIC_KEY_MODULUS",
+        "e": "AQAB",
+        "d": "YOUR_PRIVATE_KEY_EXPONENT",
+        "p": "YOUR_PRIME_P",
+        "q": "YOUR_PRIME_Q",
+        "dp": "YOUR_DP",
+        "dq": "YOUR_DQ",
+        "qi": "YOUR_QI",
+        "key_ops": [
+          "sign"
+        ],
+        "ext": true,
+        "kid": "YOUR_KEY_ID"
+      }
+    ]
+  },
+  "client_id": "YOUR_CLIENT_ID_JWT_TOKEN",
+  "fhir_url": "https://bulk-data.smarthealthit.org/YOUR_CONFIG/fhir",
+  "token_url": "https://bulk-data.smarthealthit.org/auth/token"
+}
+

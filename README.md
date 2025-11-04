@@ -96,6 +96,37 @@ python main.py
 
 ## 文檔
 
+### 快速開始
+- [快速開始指南](./QUICKSTART.md) - 5分鐘快速啟動
+- [專案總結](./PROJECT_SUMMARY.md) - 完整專案概覽
+- [環境設置指南](./ENV_SETUP_GUIDE.md)
+
+### 核心功能
+- [API 文檔](./API_DOCUMENTATION.md)
+- [部署指南](./DEPLOYMENT.md)
+- [測試指南](./TESTING_GUIDE.md)
+- [資料庫優化指南](./DATABASE_INDEX_OPTIMIZATION.md)
+
+### 安全與合規
+- [安全政策](./SECURITY.md)
+- [安全快速設置](./SECURITY_QUICKSTART.md)
+- [審計日誌系統](./AUDIT_LOG_SYSTEM.md)
+
+### 功能指南
+- [存活分析功能](./SURVIVAL_ANALYSIS_FEATURE.md)
+- [前五大診斷功能](./TOP_5_DIAGNOSES_FEATURES.md)
+- [BULK DATA 指南](./BULK_DATA_GUIDE.md)
+- [真實資料導入](./REAL_DATA_GUIDE.md)
+
+### SMART on FHIR
+- [SMART BULK DATA 設置](./SMART_BULK_DATA_SETUP.md)
+- [JWKS 認證指南](./JWKS_AUTHENTICATION_GUIDE.md)
+
+### Redis 快取
+- [Redis 快取指南](./REDIS_CACHING_GUIDE.md)
+- [Redis 快速開始](./REDIS_QUICK_START.md)
+
+### 各服務文檔
 - [前端文檔](./frontend/README.md)
 - [後端文檔](./backend/README.md)
 - [ETL 服務文檔](./etl-service/README.md)
