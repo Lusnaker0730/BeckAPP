@@ -108,19 +108,5 @@ jobs:
       with:
         name: pytest-results
         path: backend/pytest-report.xml
-    
-    - name: Publish test results
-      if: always()
-      uses: EnricoMi/publish-unit-test-result-action@v2
-      with:
-        files: backend/pytest-report.xml
-        check_name: Backend Test Results
-    
-    - name: Comment coverage on PR
-      if: github.event_name == 'pull_request'
-      uses: py-cov-action/python-coverage-comment-action@v3
-      with:
-        GITHUB_TOKEN: ${{ github.token }}
-        MINIMUM_GREEN: 70
-        MINIMUM_ORANGE: 60
+        if-no-files-found: ignore
 
