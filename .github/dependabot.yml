@@ -1,0 +1,91 @@
+# Dependabot 配置 - 自動更新依賴
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  # Python dependencies (Backend)
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "backend"
+    reviewers:
+      - "your-team"
+    assignees:
+      - "your-team"
+    commit-message:
+      prefix: "chore(backend)"
+      include: "scope"
+  
+  # Python dependencies (ETL Service)
+  - package-ecosystem: "pip"
+    directory: "/etl-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "etl"
+  
+  # Python dependencies (Analytics Service)
+  - package-ecosystem: "pip"
+    directory: "/analytics-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "analytics"
+  
+  # NPM dependencies (Frontend)
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "frontend"
+    reviewers:
+      - "your-team"
+    commit-message:
+      prefix: "chore(frontend)"
+      include: "scope"
+  
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "docker"
+  
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "docker"
+  
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "github-actions"
+

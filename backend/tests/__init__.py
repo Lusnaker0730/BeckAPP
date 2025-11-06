@@ -8,4 +8,3 @@ Test Structure:
 - integration/: Integration tests for API endpoints and services
 - fixtures/: Shared test fixtures and utilities
 """
-

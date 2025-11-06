@@ -1,0 +1,110 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        service: [backend, frontend, etl-service, analytics-service]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build ${{ matrix.service }} Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./${{ matrix.service }}
+        file: ./${{ matrix.service }}/Dockerfile
+        push: false
+        tags: fhir-analytics-${{ matrix.service }}:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Test ${{ matrix.service }} container
+      run: |
+        docker run --rm fhir-analytics-${{ matrix.service }}:test --version || true
+  
+  integration:
+    name: Docker Compose Integration Test
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Create .env file
+      run: |
+        cat > .env << EOF
+        POSTGRES_DB=fhir_analytics
+        POSTGRES_USER=fhir_user
+        POSTGRES_PASSWORD=test_password_123
+        DATABASE_URL=postgresql://fhir_user:test_password_123@postgres:5432/fhir_analytics
+        JWT_SECRET=test-jwt-secret-key-for-testing-32chars
+        JWT_ALGORITHM=HS256
+        JWT_EXPIRE_MINUTES=30
+        REDIS_PASSWORD=test_redis_password_123
+        REDIS_URL=redis://:test_redis_password_123@redis:6379/0
+        ADMIN_PASSWORD=admin123
+        ENGINEER_PASSWORD=engineer123
+        ALLOWED_ORIGINS=http://localhost:3000
+        ENVIRONMENT=testing
+        EOF
+    
+    - name: Build and start services
+      run: |
+        docker-compose up -d
+    
+    - name: Wait for services to be healthy
+      run: |
+        timeout 120 bash -c 'until docker-compose ps | grep -q "healthy"; do sleep 5; done' || true
+        sleep 10
+    
+    - name: Check service health
+      run: |
+        docker-compose ps
+        docker-compose logs --tail=50
+    
+    - name: Test backend API
+      run: |
+        curl -f http://localhost:8000/health || exit 1
+        curl -f http://localhost:8000/docs || exit 1
+    
+    - name: Test ETL service
+      run: |
+        curl -f http://localhost:8001/health || exit 1
+    
+    - name: Test analytics service
+      run: |
+        curl -f http://localhost:8002/health || exit 1
+    
+    - name: Test frontend
+      run: |
+        curl -f http://localhost:3000 || exit 1
+    
+    - name: Shutdown services
+      if: always()
+      run: |
+        docker-compose down -v
+    
+    - name: Upload logs on failure
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: docker-compose-logs
+        path: |
+          docker-compose.yml
+          .env
+

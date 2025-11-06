@@ -1,10 +1,10 @@
 # Database models
-from .user import User
-from .fhir_resources import Patient, Condition, Encounter, Observation
-from .etl_job import ETLJob
-from .valueset import Valueset
 from .cohort import Cohort, CohortComparison
-from .report import ReportTemplate, ScheduledReport, GeneratedReport
+from .etl_job import ETLJob
+from .fhir_resources import Condition, Encounter, Observation, Patient
+from .report import GeneratedReport, ReportTemplate, ScheduledReport
+from .user import User
+from .valueset import Valueset
 
 __all__ = [
     "User",
@@ -18,6 +18,5 @@ __all__ = [
     "CohortComparison",
     "ReportTemplate",
     "ScheduledReport",
-    "GeneratedReport"
+    "GeneratedReport",
 ]
-

@@ -1,10 +1,12 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON, Text
+from sqlalchemy import JSON, Column, DateTime, Integer, String, Text
 from sqlalchemy.sql import func
+
 from app.core.database import Base
+
 
 class ETLJob(Base):
     __tablename__ = "etl_jobs"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     job_id = Column(String, unique=True, index=True, nullable=False)
     resource_type = Column(String, nullable=False)
@@ -19,7 +21,6 @@ class ETLJob(Base):
     result = Column(JSON)
     created_by = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
+
     def __repr__(self):
         return f"<ETLJob(job_id='{self.job_id}', status='{self.status}')>"
-

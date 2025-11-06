@@ -1,10 +1,12 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON, Text, ForeignKey
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.sql import func
+
 from app.core.database import Base
+
 
 class Patient(Base):
     __tablename__ = "patients"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     fhir_id = Column(String, unique=True, index=True, nullable=False)
     identifier = Column(JSON)
@@ -19,9 +21,10 @@ class Patient(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+
 class Condition(Base):
     __tablename__ = "conditions"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     fhir_id = Column(String, unique=True, index=True, nullable=False)
     patient_id = Column(String, ForeignKey("patients.fhir_id"), index=True)
@@ -39,9 +42,10 @@ class Condition(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+
 class Encounter(Base):
     __tablename__ = "encounters"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     fhir_id = Column(String, unique=True, index=True, nullable=False)
     patient_id = Column(String, ForeignKey("patients.fhir_id"), index=True)
@@ -60,9 +64,10 @@ class Encounter(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+
 class Observation(Base):
     __tablename__ = "observations"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     fhir_id = Column(String, unique=True, index=True, nullable=False)
     patient_id = Column(String, ForeignKey("patients.fhir_id"), index=True)
@@ -80,4 +85,3 @@ class Observation(Base):
     job_id = Column(String, index=True, nullable=True)  # Track which ETL job loaded this record
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
