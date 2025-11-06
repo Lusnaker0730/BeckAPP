@@ -13,8 +13,8 @@ jest.mock('react-chartjs-2', () => ({
   Pie: () => <div data-testid="pie-chart">Pie Chart</div>,
 }));
 
-// Mock child components to simplify testing
-jest.mock('../../utils/axiosConfig', () => axios);
+// Mock axiosConfig
+jest.mock('../../utils/axiosConfig', () => require('axios'));
 
 describe('Dashboard Component', () => {
   const mockStats = {
