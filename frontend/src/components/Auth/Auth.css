@@ -1,46 +1,102 @@
 .auth-container {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bg-core);
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 50%);
   padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Floating animated particles could be added here if we had JS animation, but CSS is fine */
+.auth-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .auth-card {
-  background: white;
-  border-radius: 12px;
-  padding: 40px;
-  max-width: 450px;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 48px;
+  max-width: 480px;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  /* Inner border highlight */
+  position: relative;
+  z-index: 10;
+  animation: fadeUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
 .auth-header h1 {
-  font-size: 28px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 32px;
   font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 8px;
+  background: linear-gradient(135deg, white 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 12px;
+  letter-spacing: -1px;
 }
 
 .auth-header p {
   font-size: 16px;
   color: var(--text-secondary);
+  font-weight: 400;
 }
 
-.auth-form {
+/* Inputs in Auth are styled globally by index.css but we can refine spacing */
+.auth-form .form-group {
   margin-bottom: 24px;
+}
+
+.auth-form label {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
 }
 
 .auth-divider {
   position: relative;
   text-align: center;
-  margin: 24px 0;
+  margin: 32px 0;
 }
 
 .auth-divider::before {
@@ -50,42 +106,64 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: var(--border-color);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .auth-divider span {
   position: relative;
-  background: white;
-  padding: 0 16px;
-  color: var(--text-secondary);
-  font-size: 14px;
+  background: transparent;
+  /* Needs to match card bg but card has blur, so this is tricky. */
+  /* Re-simulating bg match */
+  background: #151c2e;
+  /* Fallback opaque color close to average */
+  padding: 4px 16px;
+  border-radius: 12px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .full-width {
   width: 100%;
-  margin-bottom: 12px;
+  padding: 14px;
+  font-size: 16px;
 }
 
 .smart-launch-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 16px;
+  gap: 12px;
+  font-size: 15px;
+  background: rgba(37, 99, 235, 0.15);
+  /* Blue tint */
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  color: #60a5fa;
+}
+
+.smart-launch-btn:hover {
+  background: rgba(37, 99, 235, 0.25);
+  border-color: #60a5fa;
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.2);
 }
 
 .smart-icon {
   font-size: 20px;
+  filter: drop-shadow(0 0 5px rgba(96, 165, 250, 0.5));
 }
 
 .auth-footer {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 20px;
 }
 
 .auth-footer p {
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
 }
 
 .smart-status {
@@ -93,17 +171,8 @@
   padding: 40px 20px;
 }
 
-.smart-status .spinner {
-  margin: 0 auto 20px;
-}
-
 .smart-status p {
-  color: var(--text-primary);
+  color: white;
   margin-bottom: 8px;
+  font-weight: 500;
 }
-
-.smart-status .text-secondary {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-

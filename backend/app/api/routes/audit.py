@@ -21,9 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/logs")
-@require_role(["admin"])  # 只有管理员可以查看审计日志
 async def get_audit_logs(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_role(["admin"])),
     db: Session = Depends(get_db),
     skip: int = Query(0, ge=0, description="跳过记录数"),
     limit: int = Query(50, ge=1, le=500, description="返回记录数"),
@@ -121,9 +120,8 @@ async def get_audit_logs(
 
 
 @router.get("/logs/{log_id}")
-@require_role(["admin"])
 async def get_audit_log_detail(
-    log_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)
+    log_id: int, current_user: dict = Depends(require_role(["admin"])), db: Session = Depends(get_db)
 ):
     """获取单条审计日志的详细信息"""
     log = db.query(AuditLog).filter(AuditLog.id == log_id).first()
@@ -155,9 +153,8 @@ async def get_audit_log_detail(
 
 
 @router.get("/stats")
-@require_role(["admin"])
 async def get_audit_stats(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_role(["admin"])),
     db: Session = Depends(get_db),
     days: int = Query(7, ge=1, le=90, description="统计天数"),
 ):
@@ -265,9 +262,8 @@ async def get_audit_stats(
 
 
 @router.get("/actions")
-@require_role(["admin"])
 async def get_available_actions(
-    current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)
+    current_user: dict = Depends(require_role(["admin"])), db: Session = Depends(get_db)
 ):
     """获取所有可用的操作类型（用于过滤器）"""
     actions = db.query(AuditLog.action).distinct().all()
@@ -275,9 +271,8 @@ async def get_available_actions(
 
 
 @router.get("/resources")
-@require_role(["admin"])
 async def get_available_resources(
-    current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)
+    current_user: dict = Depends(require_role(["admin"])), db: Session = Depends(get_db)
 ):
     """获取所有可用的资源类型（用于过滤器）"""
     resources = db.query(AuditLog.resource).distinct().all()
